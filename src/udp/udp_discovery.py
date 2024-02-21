@@ -4,8 +4,8 @@ import time
 import sys
 from datetime import datetime
 sys.path.append("..")
-from tcp import TCPProtocol
-from con import ConfigParser
+from ..tcp import TCPProtocol
+from ..confgi_handler import ConfigParser
 
 class UDPDiscovery:
     """

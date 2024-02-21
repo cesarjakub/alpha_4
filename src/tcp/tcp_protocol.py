@@ -3,7 +3,7 @@ import json
 import sys
 
 sys.path.append("..")
-from con import ConfigParser
+from ..confgi_handler import ConfigParser
 
 
 class TCPProtocol:
