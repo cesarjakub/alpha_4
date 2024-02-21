@@ -1,6 +1,6 @@
 from tcp import TCPProtocol
 from udp import UDPDiscovery
-from confgi_handler import ConfigParser
+#from confgi_handler import ConfigParser
 
 def main():
     #config = ConfigParser()
