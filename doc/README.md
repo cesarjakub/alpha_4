@@ -15,8 +15,6 @@
 
 ## Popis architektury
 
-## E-R diagram
-
 ## Nastavení config souboru
 
 ## Instalace a Spuštění aplikace
@@ -25,5 +23,10 @@
 
 ## Knihovy třetích stran
 - knihovny:
+  - **socket**
+  - **json**
+  - **threading**
+  - **datetime**
+  - **time**
 
 ## Závěr
