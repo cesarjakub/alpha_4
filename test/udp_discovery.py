@@ -56,7 +56,7 @@ class UDPDiscovery:
 
 
 
-peer_id = "cesar-peer1"
+peer_id = "cesar-peer"
 broadcast_ip = "172.31.255.255"
 broadcast_port = 9876
 

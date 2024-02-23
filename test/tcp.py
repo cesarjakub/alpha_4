@@ -13,6 +13,7 @@ class TCPProtocol:
                 s.connect((peer_ip, self.tcp_port))
                 self.perform_handshake(s)
                 print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCP chat: TCP connection established with {peer_ip}")
+                s.close()
         except Exception as e:
             print("Error establishing TCP connection:", str(e))
 
