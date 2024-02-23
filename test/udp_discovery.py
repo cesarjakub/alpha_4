@@ -38,7 +38,7 @@ class UDPDiscovery:
 
                             if response.get("command") == "hello":
                                 my_response = {"status": "ok", "peer_id": self.peer_id}
-                                encoded_response = json.dumps(my_response).encode("utf-8")
+                                encoded_response = (json.dumps(my_response)+"\n").encode("utf-8")
                                 self.socket.sendto(encoded_response, addr)
                                 print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: Server: Sent response to the remote {addr[0]}:{addr[1]} - {my_response}")
 

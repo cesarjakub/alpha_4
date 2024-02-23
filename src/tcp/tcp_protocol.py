@@ -1,6 +1,7 @@
 import socket
 import json
 import sys
+import time
 
 sys.path.append("..")
 from confgi_handler import ConfigParser
@@ -74,7 +75,7 @@ class TCPProtocol:
             message (str): The message content.
         """
         try:
-            message_data = {"command": "new_message", "message_id": message_id, "message": message}
+            message_data = {"command": "new_message", "message_id": str(time.time()), "message": message}
             message_json = json.dumps(message_data)
             self.tcp_server.sendall(message_json.encode("utf-8"))
             response = self.tcp_server.recv(1024).decode("utf-8")
