@@ -11,6 +11,7 @@ class HandleUDPandTCP:
         self.broadcast = broadcast
         self.port = port
         self.lock = threading.Lock()
+        self.messages = set()
 
     def udp_discovery(self):
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp:
@@ -40,7 +41,7 @@ class HandleUDPandTCP:
                     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as udp:
                         udp.connect((addr[0], self.port))
                         udp.sendall(encoded_response)
-                        #tcp handshake
+                        self.tcp_handshake()
                     print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: UDPDiscovery: Send response to the remote {addr[0]}:{addr[1]} - {udp_msg}")
             except Exception as e:
                 print("SEND Something went wrong")
@@ -53,3 +54,5 @@ class HandleUDPandTCP:
                 data, addr = udp.recvfrom(1024)
                 threading.Thread(target=self.send_udp_response, args=(data, addr)).start()
 
+    def tcp_handshake(self):
+        pass
