@@ -1,13 +1,20 @@
-from tcp import TCPProtocol
-from udp import UDPDiscovery
-from confgi_handler import ConfigParser
+import threading
+#from src.configuration.configuration import Configuration
+from udp_tcp import HandleUDPandTCP
 
 def main():
-    config = ConfigParser()
-    _, _, _, name = config.read_UDP_config()
-    discovery = UDPDiscovery(name)
-    discovery.start_discovery()
-
+    """
+    config_info = Configuration()
+    try:
+        peer_id, broadcast_address, port = config_info.read_config()
+        print(peer_id, broadcast_address, port)
+    except Exception as e:
+        print(e)
+        return
+    """
+    udp_tcp = HandleUDPandTCP("cesar-peer", "172.31.255.255", 9876)
+    udp_tcp.start_udp()
+    udp_tcp.start_tcp()
 
 if __name__ == '__main__':
     main()

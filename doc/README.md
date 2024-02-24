@@ -14,12 +14,26 @@
 ## Specifikace požadavků
 
 ## Popis architektury
+- Peer-to-peer (P2P) architektura
+  - Decentralizovaný model počítačové sítě, ve které spolu komunikují přímo klienti bez nutnosti serveru.
+  - P2P síti si každý klient nese zodpovědnost za sdílení a ukládání dat a zároveň může využívat data a služby sdílené ostatními klienty.
 
 ## Nastavení config souboru
+- Před používáním je třeba nastavit konfiguraci aplikace
+- najdeme ji ve složce `/config/config.ini`
+- zde je třeba upravit
+  - **peer_id** - port pro naslouchání
+  - **broadcast_address** - ip adresa na naslouchání
+  - **port** - nastavení libovolného id 'peera'
 
 ## Instalace a Spuštění aplikace
 
 ## Chybové stavy
+- Chyby při [nevyplnění konfiguračního souboru](#nastavení-config-souboru)
+- Chyby přo síťové komunikaci
+  - UDP
+  - TCP
+- Chyby spojené s thready
 
 ## Knihovy třetích stran
 - knihovny:

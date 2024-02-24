@@ -77,9 +77,7 @@ class HandleUDPandTCP:
                 tcp_res = tcp.recv(10000)
                 decoded_res = json.loads(tcp_res.decode("utf-8"))
                 if decoded_res.get("status") == "ok":
-                    print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Handshake established")
-                    self.messages.add(decoded_res.get("messages"))
-                    print(len(self.messages))
+                    print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Handshake established with {decoded_res}")
             except Exception as e:
                 print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Error during TCP handshake with {addr[0]}:{addr[1]}")
 
@@ -102,14 +100,12 @@ class HandleUDPandTCP:
                 if data:
                     received_msg = json.loads(data.decode("utf-8"))
                     if received_msg.get("command") == "hello":
-                        print(
-                            f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Received handshake request from {addr[0]}:{addr[1]} - {received_msg}")
+                        print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Received handshake request from {addr[0]}:{addr[1]} - {received_msg}")
                         response_msg = {"status": "ok", "messages": self.messages}
                         encoded_response = (json.dumps(response_msg) + "\n").encode("utf-8")
                         conn.sendall(encoded_response)
             except Exception as e:
-                print(
-                    f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Error handling client {addr[0]}:{addr[1]} - {e}")
+                print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Error handling client {addr[0]}:{addr[1]} - {e}")
 
     def start_tcp(self):
         tcp_thread = threading.Thread(target=self.handle_tcp_requests)
