@@ -27,6 +27,7 @@ Pokud obdržíte zprávu, aplikace ji zpracuje a zobrazí v konzoli.
 - UDP discovery
 - TCP protocol
 - Webové api
+  - [Doména](http://s-cesar-3.dev.spsejecna.net/)
 - Systémový daemon
 
 ## Popis architektury
