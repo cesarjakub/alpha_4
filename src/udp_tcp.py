@@ -29,20 +29,19 @@ class HandleUDPandTCP:
             finally:
                 udp.close()
 
-    def send_udp_response(self, udp):
+    def udp_response(self, udp):
         while True:
             data, addr = udp.recvfrom(1024)
             res = json.loads(data.decode("utf-8"))
             if res.get("command") == "hello" and res.get("peer_id") != self.peer_id:
                 print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: UDPDiscovery: Server: Received request {self.broadcast} from the remote {addr[0]}:{addr[1]} - {res}")
-
+                udp_two = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                udp_two.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                udp_two.connect(addr)
                 udp_msg = {"status": "ok", "peer_id": self.peer_id}
                 encoded_msg = (json.dumps(udp_msg) + "\n").encode("utf-8")
-                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp_two:
-                    udp_two.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                    udp_two.connect(addr)
-                    udp_two.sendall(encoded_msg)
-                    self.tcp_handshake(addr)
+                udp_two.sendall(encoded_msg)
+                self.tcp_handshake(addr)
                 print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: UDPDiscovery: Send response to the remote {addr[0]}:{addr[1]} - {udp_msg}")
 
 
@@ -51,9 +50,9 @@ class HandleUDPandTCP:
             udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 udp.bind(('0.0.0.0', self.port))
-                self.send_udp_response(udp)
+                self.udp_response(udp)
             except Exception as e:
-                print("SEND Something went wrong")
+                print("Listen Something went wrong")
 
     def start_udp(self):
         udp_thread_one = threading.Thread(target=self.udp_discovery)
@@ -61,56 +60,37 @@ class HandleUDPandTCP:
         try:
             udp_thread_one.start()
             udp_thread_two.start()
-        except KeyboardInterrupt:
             udp_thread_one.join()
             udp_thread_two.join()
+        except KeyboardInterrupt:
             print("Something went wrong with Threads")
 
     # tcp handling
     def tcp_handshake(self, addr):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp:
-            try:
-                tcp.connect(addr)
-                tcp_msg = {"command": "hello", "peer_id": self.peer_id}
-                encoded_msg = (json.dumps(tcp_msg) + "\n").encode("utf-8")
-                tcp.sendall(encoded_msg)
-                tcp_res = tcp.recv(10000)
-                decoded_res = json.loads(tcp_res.decode("utf-8"))
-                if decoded_res.get("status") == "ok":
-                    print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Handshake established with {decoded_res}")
-            except Exception as e:
-                print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Error during TCP handshake with {addr[0]}:{addr[1]}")
-
-    def handle_tcp_requests(self):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp_server:
-            try:
-                tcp_server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                tcp_server.bind(('0.0.0.0', self.port))
-                tcp_server.listen(5)
-                while True:
-                    conn, addr = tcp_server.accept()
-                    threading.Thread(target=self.handle_tcp_client, args=(conn, addr)).start()
-            except Exception as e:
-                print("TCP Server Something went wrong")
-
-    def handle_tcp_client(self, conn, addr):
-        with conn:
-            try:
-                data = conn.recv(1024)
-                if data:
-                    received_msg = json.loads(data.decode("utf-8"))
-                    if received_msg.get("command") == "hello":
-                        print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Received handshake request from {addr[0]}:{addr[1]} - {received_msg}")
-                        response_msg = {"status": "ok", "messages": self.messages}
-                        encoded_response = (json.dumps(response_msg) + "\n").encode("utf-8")
-                        conn.sendall(encoded_response)
-            except Exception as e:
-                print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Error handling client {addr[0]}:{addr[1]} - {e}")
-
-    def start_tcp(self):
-        tcp_thread = threading.Thread(target=self.handle_tcp_requests)
         try:
-            tcp_thread.start()
-        except KeyboardInterrupt:
-            tcp_thread.join()
-            print("Something went wrong with TCP Thread")
+            tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            tcp.settimeout(3)
+            tcp.connect(addr)
+
+            handshake_msg = {"command": "hello", "peer_id": self.peer_id}
+            encoded_handshake_msg = (json.dumps(handshake_msg) + "\n").encode("utf-8")
+            tcp.sendall(encoded_handshake_msg)
+
+            tcp_res = tcp.recv(100000)
+            decoded_res = json.loads(tcp_res.decode("utf-8"))
+
+            if decoded_res.get("status") == "ok":
+                print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Handshake established with {addr[0]}:{addr[1]}")
+                print(f"Received messages history: {decoded_res.get('messages')}")
+            else:
+                print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Unexpected response during handshake with {addr[0]}:{addr[1]}")
+
+        except ConnectionRefusedError:
+            print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Connection refused by {addr[0]}:{addr[1]}")
+        except TimeoutError:
+            print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Handshake timed out with {addr[0]}:{addr[1]}")
+        except Exception as e:
+            print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Error during TCP handshake with {addr[0]}:{addr[1]}")
+        finally:
+            tcp.close()
+

@@ -14,7 +14,6 @@ def main():
     """
     udp_tcp = HandleUDPandTCP("cesar-peer", "172.31.255.255", 9876)
     udp_tcp.start_udp()
-    udp_tcp.start_tcp()
 
 if __name__ == '__main__':
     main()
