@@ -1,6 +1,5 @@
-import threading
 #from src.configuration.configuration import Configuration
-from udp_tcp import HandleUDPandTCP
+from src.udp_tcp.udp_tcp import HandleUDPandTCP
 
 def main():
     """

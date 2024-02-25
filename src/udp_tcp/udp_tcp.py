@@ -10,7 +10,8 @@ class HandleUDPandTCP:
         self.peer_id = peer_id
         self.broadcast = broadcast
         self.port = port
-        self.messages = {}
+        self.peers_info = set()
+        self.messages_his = {"1707243010934" :{"peer_id": self.peer_id, "message": "pokus"}}
 
     # udp handling
     def udp_discovery(self):
@@ -35,13 +36,17 @@ class HandleUDPandTCP:
             res = json.loads(data.decode("utf-8"))
             if res.get("command") == "hello" and res.get("peer_id") != self.peer_id:
                 print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: UDPDiscovery: Server: Received request {self.broadcast} from the remote {addr[0]}:{addr[1]} - {res}")
-                udp_two = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                udp_two.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                udp_two.connect(addr)
-                udp_msg = {"status": "ok", "peer_id": self.peer_id}
-                encoded_msg = (json.dumps(udp_msg) + "\n").encode("utf-8")
-                udp_two.sendall(encoded_msg)
-                self.tcp_handshake(addr)
+                peer_ids_tmp = [id[0] for id in self.peers_info]
+                if res.get("peer_id") not in peer_ids_tmp:
+                    udp_two = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    udp_two.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    udp_two.connect(addr)
+                    udp_msg = {"status": "ok", "peer_id": self.peer_id}
+                    encoded_msg = (json.dumps(udp_msg) + "\n").encode("utf-8")
+                    udp_two.sendall(encoded_msg)
+                    self.tcp_handshake(addr, res.get("peer_id"))
+                peer_ids = [id[0] for id in self.peers_info]
+                print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Established TCP connection with {peer_ids}")
                 print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: UDPDiscovery: Send response to the remote {addr[0]}:{addr[1]} - {udp_msg}")
 
 
@@ -66,22 +71,24 @@ class HandleUDPandTCP:
             print("Something went wrong with Threads")
 
     # tcp handling
-    def tcp_handshake(self, addr):
+    def tcp_handshake(self, addr, peer_id):
         try:
             tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             tcp.settimeout(3)
+
             tcp.connect(addr)
 
             handshake_msg = {"command": "hello", "peer_id": self.peer_id}
-            encoded_handshake_msg = (json.dumps(handshake_msg) + "\n").encode("utf-8")
+            encoded_handshake_msg = (json.dumps(handshake_msg) + "\n").encode('utf-8')
             tcp.sendall(encoded_handshake_msg)
-
             tcp_res = tcp.recv(100000)
             decoded_res = json.loads(tcp_res.decode("utf-8"))
 
             if decoded_res.get("status") == "ok":
-                print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Handshake established with {addr[0]}:{addr[1]}")
-                print(f"Received messages history: {decoded_res.get('messages')}")
+                print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Established Handshake with {addr[0]}:{addr[1]}")
+                self.peers_info.add((peer_id, addr, tcp))
+                self.send_chat_history(tcp)
+                #self.add_message_to_dict(decoded_res.get('messages'))
             else:
                 print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Unexpected response during handshake with {addr[0]}:{addr[1]}")
 
@@ -89,8 +96,24 @@ class HandleUDPandTCP:
             print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Connection refused by {addr[0]}:{addr[1]}")
         except TimeoutError:
             print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Handshake timed out with {addr[0]}:{addr[1]}")
-        except Exception as e:
+        except Exception:
             print(f"{datetime.now().strftime('%b %d %H:%M:%S')} {self.peer_id}: TCPProtocol: Error during TCP handshake with {addr[0]}:{addr[1]}")
-        finally:
-            tcp.close()
 
+    def send_chat_history(self, tcp):
+        try:
+            msg = {"status": "ok", "messages": self.messages_his}
+            encoded_msg = (json.dumps(msg) + "\n").encode('utf-8')
+            tcp.sendall(encoded_msg)
+        except Exception as e:
+            print(f"Error sending chat history: {e}")
+
+    def send_tcp_msg(self, message):
+        for peer_id, _, tcp in self.peers_info:
+            try:
+                msg_id = str(int(time.time() * 1000))
+                msg = {"command": "new_message", "message_id": msg_id, "message": message}
+                encoded_msg = (json.dumps(msg) + "\n").encode('utf-8')
+                tcp.sendall(encoded_msg)
+                print(f"Sent message {msg_id} to peer {peer_id}")
+            except Exception as e:
+                print(f"Error sending message to peer {peer_id}: {e}")

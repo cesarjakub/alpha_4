@@ -1,16 +1,15 @@
 from flask import Flask, render_template, jsonify
 
-
 app = Flask(__name__)
 
 #rest-api routes
-@app.route("/messages/")
+@app.route("/messages/", methods=['GET'])
 def messages():
-    pass
+    return jsonify()
 
-@app.route("/messages/<word>")
-def by_message_text():
-    pass
+@app.route("/messages/<word>", methods=['GET'])
+def by_message_text(word):
+    return jsonify()
 
 
 #routes
@@ -24,4 +23,4 @@ def bad_request(e):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=3000)
+    app.run(host='0.0.0.0')
